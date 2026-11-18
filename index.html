@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#3659d9">
+<meta name="description" content="오프라인에서도 사용할 수 있는 Markdown 편집기">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MD Studio">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<title>MD Studio — Markdown Editor</title>
+<style>
+:root{color-scheme:light;--bg:#f4f6fa;--panel:#fff;--ink:#182230;--muted:#687386;--line:#dce2ea;--accent:#3659d9;--toolbar:#fbfcfe}
+*{box-sizing:border-box}html,body{height:100%;margin:0;font-family:Inter,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:var(--ink);background:var(--bg)}
+body{display:flex;flex-direction:column;min-width:320px;min-height:100dvh;padding-bottom:env(safe-area-inset-bottom)}
+header{height:58px;display:flex;align-items:center;gap:18px;padding:0 18px;background:var(--panel);border-bottom:1px solid var(--line);flex:none}
+.brand{font-weight:800;letter-spacing:-.4px;font-size:17px;white-space:nowrap}.brand span{color:var(--accent)}
+nav{display:flex;align-items:center;gap:5px;flex:1}
+button,.file-label{border:1px solid transparent;background:transparent;color:var(--ink);padding:8px 11px;border-radius:7px;font-size:13px;cursor:pointer}
+button:hover,.file-label:hover{background:#eef2fb;border-color:#e0e6f3}
+button.primary{background:var(--accent);color:#fff}.primary:hover{background:#2949c2}
+.menu-group{position:relative}.menu-group>button:after{content:" ▾";color:var(--muted)}
+.menu{display:none;position:absolute;top:38px;left:0;min-width:180px;background:#fff;border:1px solid var(--line);box-shadow:0 10px 28px #17243a20;border-radius:9px;padding:5px;z-index:5}
+.menu-group.open .menu{display:block}.menu button{display:block;width:100%;text-align:left;border:0}
+.right-tools{display:flex;align-items:center;gap:8px}.status{font-size:12px;color:var(--muted)}
+main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+.pane{background:var(--panel);display:flex;flex-direction:column;min-width:0;min-height:0}
+.pane-head{height:43px;display:flex;align-items:center;justify-content:space-between;padding:0 15px;border-bottom:1px solid var(--line);font-size:12px;font-weight:700;letter-spacing:.4px;color:#586477;background:var(--toolbar)}
+.pane-head small{font-weight:400;letter-spacing:0;color:#8993a3}
+#source{width:100%;height:100%;resize:none;border:0;outline:0;padding:22px 24px;font:14px/1.75 "Cascadia Code",Consolas,monospace;color:#273449;background:#fff;tab-size:2}
+#preview{overflow:auto;padding:24px 34px 50px;line-height:1.75;font-size:15px}
+#preview h1,#preview h2,#preview h3{line-height:1.3;letter-spacing:-.5px;margin:1.35em 0 .55em}
+#preview h1{font-size:2em;border-bottom:1px solid var(--line);padding-bottom:.35em;margin-top:.25em}
+#preview h2{font-size:1.55em;border-bottom:1px solid #edf0f4;padding-bottom:.25em}
+#preview h3{font-size:1.2em}#preview p{margin:.7em 0}
+#preview a{color:var(--accent)}#preview blockquote{margin:1em 0;padding:2px 16px;border-left:4px solid #9aaddf;color:#596579;background:#f7f8fc}
+#preview pre{padding:14px 16px;background:#f2f4f8;border:1px solid #e5e9f0;border-radius:8px;overflow:auto}
+#preview code{font-family:Consolas,monospace;background:#f0f2f6;padding:2px 5px;border-radius:4px;font-size:.9em}
+#preview pre code{background:none;padding:0}
+#preview table{border-collapse:collapse;width:100%;margin:1em 0}#preview th,#preview td{border:1px solid var(--line);padding:8px 11px;text-align:left}#preview th{background:#f5f7fa}
+#preview img{max-width:100%}#preview hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+footer{height:29px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:#fafbfd;border-top:1px solid var(--line);font-size:11px;color:#778195;flex:none}
+#fileInput{display:none}.hint{color:#8b95a5}
+@media(max-width:800px){
+ body{min-width:320px}
+ header{height:auto;min-height:54px;flex-wrap:wrap;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-top))}
+ .brand{font-size:15px}
+ nav{order:3;flex:1 0 100%;overflow-x:auto;white-space:nowrap;padding-bottom:2px;scrollbar-width:none}
+ nav::-webkit-scrollbar{display:none}
+ nav button,.file-label{min-height:42px;padding:9px 12px}
+ .right-tools{margin-left:auto}
+ .right-tools button{min-height:42px}
+ main{display:flex;flex-direction:column;gap:1px;min-height:0}
+ .pane{min-height:40vh;flex:1 1 50%}
+ .pane-head{height:40px;flex:none}
+ #source{font-size:16px;line-height:1.65;padding:16px;min-height:32vh}
+ #preview{padding:16px 18px 32px;overflow:auto;min-height:32vh;font-size:15px;overflow-wrap:anywhere}
+ .menu{position:fixed;top:auto;left:8px;right:8px;min-width:0;max-width:320px}
+ footer{height:auto;min-height:30px;padding:7px 10px;gap:8px;flex-wrap:wrap}
+}
+@media(max-width:520px){
+ header{gap:4px}
+ .brand{font-size:14px}
+ nav{gap:2px}
+ nav>button,.menu-group>button{font-size:12px;padding:8px 9px}
+ .pane{min-height:42vh}
+ #preview h1{font-size:1.65em}
+ #preview h2{font-size:1.35em}
+ #helpDialog section{padding:17px}
+}
+@media(min-width:801px){main{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@media(display-mode:standalone){header{padding-top:calc(8px + env(safe-area-inset-top))}}
+
+@media print{body{display:block;background:#fff;min-width:0}header,footer,main .pane:first-child,.pane-head{display:none!important}main{display:block;background:#fff}main .pane:last-child{display:block}#preview{overflow:visible;padding:0 12mm;color:#000}#preview a{color:#000;text-decoration:underline}#preview pre{white-space:pre-wrap;break-inside:avoid}#preview table{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">MD <span>STUDIO</span></div>
+  <nav>
+    <div class="menu-group" id="fileMenu"><button type="button">파일</button><div class="menu">
+      <button type="button" id="newDoc">새 문서</button>
+      <button type="button" id="openDoc">열기… (.md)</button>
+      <button type="button" id="saveDoc">Markdown 저장</button>
+    </div></div>
+    <div class="menu-group" id="exportMenu"><button type="button">내보내기</button><div class="menu">
+      <button type="button" id="exportHtml">HTML 파일로 내보내기</button>
+      <button type="button" id="exportPdf">PDF로 내보내기 / 인쇄</button>
+    </div></div>
+    <div class="menu-group" id="helpMenu"><button type="button">도움말</button><div class="menu">
+      <button type="button" id="showHelp">사용 방법</button>
+      <button type="button" id="showShortcuts">편집 기능 안내</button>
+    </div></div>
+    <button type="button" id="insertHeading">제목</button>
+    <button type="button" id="insertCode">코드</button>
+    <button type="button" id="insertTable">표</button>
+  </nav>
+  <div class="right-tools"><span class="status" id="saveStatus">변경 사항 있음</span><button type="button" id="installApp" style="display:none">앱 설치</button><button class="primary" id="quickSave">저장</button></div>
+</header>
+<main>
+  <section class="pane">
+    <div class="pane-head"><span>MARKDOWN SOURCE</span><small id="sourceStats">0자</small></div>
+    <textarea id="source" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Markdown 소스 편집기"></textarea>
+  </section>
+  <section class="pane">
+    <div class="pane-head"><span>LIVE PREVIEW</span><small>실시간 미리보기</small></div>
+    <article id="preview"></article>
+  </section>
+</main>
+<footer><span>MD Studio · 단일 HTML 앱</span><span>Markdown을 입력하면 오른쪽에 결과가 표시됩니다.</span></footer>
+<input type="file" id="fileInput" accept=".md,.markdown,.txt,text/markdown,text/plain">
+<div id="helpDialog" role="dialog" aria-modal="true" aria-labelledby="helpTitle" style="display:none;position:fixed;inset:0;background:#17243a66;z-index:20;align-items:center;justify-content:center;padding:20px">
+  <section style="width:min(540px,100%);max-height:85vh;overflow:auto;background:#fff;border:1px solid #dce2ea;border-radius:14px;box-shadow:0 20px 60px #17243a33;padding:22px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
+      <h2 id="helpTitle" style="font-size:18px;margin:0">MD Studio 도움말</h2>
+      <button type="button" id="closeHelp" aria-label="도움말 닫기">닫기 ✕</button>
+    </div>
+    <div id="helpContent" style="font-size:14px;line-height:1.75;color:#344054">
+      <h3>기본 사용법</h3>
+      <ol>
+        <li><b>파일 → 열기</b>를 눌러 기존 Markdown 파일을 불러옵니다.</li>
+        <li>왼쪽 편집창에서 Markdown 문법으로 내용을 작성하거나 수정합니다.</li>
+        <li>오른쪽 화면에서 변환된 결과를 실시간으로 확인합니다.</li>
+        <li><b>파일 → Markdown 저장</b>으로 수정한 내용을 저장합니다.</li>
+      </ol>
+      <h3>HTML / PDF 내보내기</h3>
+      <ul>
+        <li><b>내보내기 → HTML 파일로 내보내기</b>: 미리보기 내용을 독립 HTML 파일로 다운로드합니다.</li>
+        <li><b>내보내기 → PDF로 내보내기</b>: 인쇄 창에서 대상 프린터를 <b>PDF로 저장</b>으로 선택합니다.</li>
+      </ul>
+      <h3>편집 도구</h3>
+      <ul>
+        <li><b>제목</b>: 제목(##) 문법을 삽입합니다.</li>
+        <li><b>코드</b>: 코드 블록을 삽입합니다.</li>
+        <li><b>표</b>: 기본 2열 표를 삽입합니다.</li>
+      </ul>
+      <p style="color:#687386">참고: 이 앱은 별도 설치 없이 HTML 파일을 브라우저에서 열어 사용하는 단독형 편집기입니다.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+const source=document.getElementById('source'),preview=document.getElementById('preview');
+const fileInput=document.getElementById('fileInput'),saveStatus=document.getElementById('saveStatus');
+let currentName='untitled.md',dirty=false;
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function inline(s){
+  s=esc(s);
+  s=s.replace(/!\[([^\]]*)\]\((https?:\/\/[^ )]+)\)/g,'<img alt="$1" src="$2">');
+  s=s.replace(/\[([^\]]+)\]\((https?:\/\/[^ )]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  s=s.replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/__([^_]+)__/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/~~([^~]+)~~/g,'<del>$1</del>');
+  return s;
+}
+function render(md){
+ const lines=md.replace(/\r/g,'').split('\n');let out='',inCode=false,code=[],ul=false,ol=false,quote=false,table=false;
+ const closeLists=()=>{if(ul){out+='</ul>';ul=false}if(ol){out+='</ol>';ol=false}};
+ const closeQuote=()=>{if(quote){out+='</blockquote>';quote=false}};
+ const closeTable=()=>{if(table){out+='</tbody></table>';table=false}};
+ for(let i=0;i<lines.length;i++){
+  let l=lines[i];
+  if(l.trim().startsWith('```')){closeLists();closeQuote();closeTable();if(!inCode){inCode=true;code=[]}else{out+='<pre><code>'+esc(code.join('\n'))+'</code></pre>';inCode=false}continue}
+  if(inCode){code.push(l);continue}
+  if(!l.trim()){closeLists();closeQuote();closeTable();continue}
+  if(/^\s*\|?.+\|.+\|?\s*$/.test(l)&&i+1<lines.length&&/^\s*\|?[\s:|-]+\|[\s:|-]+\|?\s*$/.test(lines[i+1])){
+    closeLists();closeQuote();if(!table){out+='<table><thead><tr>';l.split('|').filter((x,j,a)=>!(j===0&&!x.trim())&&!(j===a.length-1&&!x.trim())).forEach(c=>out+='<th>'+inline(c.trim())+'</th>');out+='</tr></thead><tbody>';table=true}i++;continue;
+  }
+  if(table&&l.includes('|')){out+='<tr>';l.split('|').filter((x,j,a)=>!(j===0&&!x.trim())&&!(j===a.length-1&&!x.trim())).forEach(c=>out+='<td>'+inline(c.trim())+'</td>');out+='</tr>';continue}else closeTable();
+  let h=l.match(/^(#{1,6})\s+(.+)$/);if(h){closeLists();closeQuote();out+='<h'+h[1].length+'>'+inline(h[2])+'</h'+h[1].length+'>';continue}
+  if(/^(\*\s*\*\s*\*|-{3,}|_{3,})$/.test(l.trim())){closeLists();closeQuote();out+='<hr>';continue}
+  if(/^>\s?/.test(l)){closeLists();if(!quote){out+='<blockquote>';quote=true}out+='<p>'+inline(l.replace(/^>\s?/,''))+'</p>';continue}else closeQuote();
+  let u=l.match(/^\s*[-*+]\s+(.+)$/),o=l.match(/^\s*\d+[.)]\s+(.+)$/);
+  if(u){if(ol){out+='</ol>';ol=false}if(!ul){out+='<ul>';ul=true}out+='<li>'+inline(u[1])+'</li>';continue}
+  if(o){if(ul){out+='</ul>';ul=false}if(!ol){out+='<ol>';ol=true}out+='<li>'+inline(o[1])+'</li>';continue}
+  closeLists();out+='<p>'+inline(l)+'</p>';
+ }
+ closeLists();closeQuote();closeTable();if(inCode)out+='<pre><code>'+esc(code.join('\n'))+'</code></pre>';
+ return out||'<p class="hint">Markdown 소스를 입력하면 미리보기가 여기에 표시됩니다.</p>';
+}
+function update(){preview.innerHTML=render(source.value);document.getElementById('sourceStats').textContent=source.value.length.toLocaleString()+'자';dirty=true;saveStatus.textContent='수정됨'}
+source.addEventListener('input',update);
+function download(name,content,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function saveMd(){download(currentName,source.value,'text/markdown;charset=utf-8');dirty=false;saveStatus.textContent='저장 준비 완료'}
+function exportHtml(){const body=render(source.value);const doc='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(currentName.replace(/\.(md|markdown)$/i,''))+'</title><style>body{max-width:850px;margin:48px auto;padding:0 24px;font:16px/1.8 system-ui,sans-serif;color:#202938}h1,h2{line-height:1.3;border-bottom:1px solid #ddd;padding-bottom:.3em}pre{background:#f3f4f6;padding:16px;overflow:auto;border-radius:8px}code{background:#f1f2f4;padding:2px 5px;border-radius:4px}blockquote{border-left:4px solid #9aa;padding-left:16px;color:#586174}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ddd;padding:8px}th{background:#f5f5f5}img{max-width:100%}</style></head><body>'+body+'</body></html>';download(currentName.replace(/\.(md|markdown)$/i,'')+'.html',doc,'text/html;charset=utf-8');}
+document.querySelectorAll('.menu-group>button').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const g=b.parentElement;document.querySelectorAll('.menu-group').forEach(x=>{if(x!==g)x.classList.remove('open')});g.classList.toggle('open')}));
+document.addEventListener('click',()=>document.querySelectorAll('.menu-group').forEach(x=>x.classList.remove('open')));
+document.getElementById('openDoc').onclick=()=>fileInput.click();
+fileInput.onchange=async e=>{const f=e.target.files[0];if(!f)return;source.value=await f.text();currentName=f.name;update();dirty=false;saveStatus.textContent=f.name;fileInput.value=''};
+document.getElementById('saveDoc').onclick=saveMd;document.getElementById('quickSave').onclick=saveMd;document.getElementById('exportHtml').onclick=exportHtml;
+document.getElementById('exportPdf').onclick=()=>{document.querySelectorAll('.menu-group').forEach(x=>x.classList.remove('open'));window.print()};
+const helpDialog=document.getElementById('helpDialog');
+function openHelp(){document.querySelectorAll('.menu-group').forEach(x=>x.classList.remove('open'));helpDialog.style.display='flex'}
+document.getElementById('showHelp').onclick=openHelp;
+document.getElementById('showShortcuts').onclick=()=>{openHelp();document.getElementById('helpTitle').textContent='편집 기능 안내'};
+document.getElementById('closeHelp').onclick=()=>helpDialog.style.display='none';
+helpDialog.addEventListener('click',e=>{if(e.target===helpDialog)helpDialog.style.display='none'});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')helpDialog.style.display='none'});
+document.getElementById('newDoc').onclick=()=>{if(dirty&&!confirm('저장하지 않은 변경 사항이 있습니다. 새 문서를 열까요?'))return;source.value='';currentName='untitled.md';update();dirty=false;saveStatus.textContent='새 문서'};
+function insert(text){const a=source.selectionStart,b=source.selectionEnd;source.setRangeText(text,a,b,'end');source.focus();update()}
+document.getElementById('insertHeading').onclick=()=>insert('## 새 제목\n');
+document.getElementById('insertCode').onclick=()=>insert('\n```javascript\n// 코드를 입력하세요\n```\n');
+document.getElementById('insertTable').onclick=()=>insert('\n| 항목 | 설명 |\n| --- | --- |\n| 예시 | 내용 |\n');
+source.value='# Markdown 문서\n\n왼쪽에서 **Markdown 소스**를 편집하면 오른쪽에 결과가 실시간으로 표시됩니다.\n\n## 시작하기\n\n- 상단의 **파일 → 열기**에서 `.md` 파일을 불러오세요.\n- **파일 → Markdown 저장**으로 편집한 파일을 저장하세요.\n- **내보내기 → HTML 파일로 내보내기** 또는 **PDF로 내보내기 / 인쇄**를 선택하세요.\n\n> PDF 내보내기는 브라우저의 인쇄 창을 열며, 대상에서 “PDF로 저장”을 선택하면 됩니다.\n\n```javascript\nconsole.log(\"Hello, Markdown!\");\n```\n\n| 기능 | 설명 |\n| --- | --- |\n| 실시간 미리보기 | 입력 즉시 렌더링 |\n| HTML | 독립 HTML 파일 다운로드 |\n| PDF | 인쇄 창에서 PDF 저장 |\n';
+update();dirty=false;saveStatus.textContent='준비됨';
+
+// PWA installation: supported browsers expose the native install prompt.
+let deferredInstallPrompt=null;
+const installButton=document.getElementById('installApp');
+window.addEventListener('beforeinstallprompt',event=>{
+  event.preventDefault();
+  deferredInstallPrompt=event;
+  installButton.style.display='inline-block';
+});
+installButton.addEventListener('click',async()=>{
+  if(!deferredInstallPrompt)return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt=null;
+  installButton.style.display='none';
+});
+window.addEventListener('appinstalled',()=>{
+  installButton.style.display='none';
+  saveStatus.textContent='앱 설치 완료';
+});
+
+// Service workers require HTTPS or localhost; file:// execution remains available without PWA features.
+if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost' || location.hostname==='127.0.0.1')){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('Service worker registration failed:',err)));
+}
+</script>
+</body>
+</html>
